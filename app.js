@@ -23,6 +23,8 @@ app.ws('/', function(ws, req) {
     ws.on('message', function(msg) {
 	console.log('got msg: ' + msg);
     });
+
+    ws.send('2 + 3 = ');
 });
 
 app.listen(3000, function() {
