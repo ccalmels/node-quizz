@@ -40,6 +40,17 @@ app.ws('/', function(ws, req) {
 	type: 'question',
 	data: first + ' + ' + second + ' = '
     }));
+
+    ws.myprogress = 0;
+    setInterval(function() {
+	ws.myprogress += 1;
+	if (ws.myprogress > 100)
+	    ws.myprogress = 0;
+
+	ws.send(JSON.stringify({
+	    type: 'progress',
+	    data: ws.myprogress + '%'
+	}))}, 50);
 });
 
 app.listen(3000, function() {

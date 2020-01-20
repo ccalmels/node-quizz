@@ -1,6 +1,7 @@
 const url = window.location.href.replace('http', 'ws');
 const ws = new WebSocket(url);
 const operation = document.querySelector('#operation');
+const progress = document.querySelector('#progress');
 
 ws.onerror = function(event) {
     alert('Websocket connection failed');
@@ -9,7 +10,16 @@ ws.onerror = function(event) {
 ws.onmessage = function(message) {
     console.log(message);
 
-    operation.innerHTML = message.data;
+    const obj = JSON.parse(message.data);
+
+    switch(obj.type) {
+    case 'question':
+	operation.innerHTML = obj.data;
+	break;
+    case 'progress':
+	progress.style.width = obj.data;
+	break;
+    }
 };
 
 const input = document.querySelector('#answer');
