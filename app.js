@@ -25,11 +25,17 @@ app.ws('/', function(ws, req) {
     });
 
     ws.on('message', function(msg) {
-	console.log('got msg: ' + msg);
+	console.log('got msg: ' + msg + ' want: ' + ws.myresponse);
+	if (ws.myresponse == msg)
+	    console.log('ok');
+	else
+	    console.log('nok');
     });
 
     const first = get_random_number();
     const second = get_random_number();
+
+    ws.myresponse = first + second;
     ws.send(first + ' + ' + second + ' = ');
 });
 
