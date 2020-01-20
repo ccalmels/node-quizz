@@ -2,6 +2,7 @@ const url = window.location.href.replace('http', 'ws');
 const ws = new WebSocket(url);
 const operation = document.querySelector('#operation');
 const progress = document.querySelector('#progress');
+const input = document.querySelector('#answer');
 
 ws.onerror = function(event) {
     alert('Websocket connection failed');
@@ -15,14 +16,13 @@ ws.onmessage = function(message) {
     switch(obj.type) {
     case 'question':
 	operation.innerHTML = obj.data;
+	input.focus();
 	break;
     case 'progress':
 	progress.style.width = obj.data;
 	break;
     }
 };
-
-const input = document.querySelector('#answer');
 
 input.onkeypress = function(event) {
     if (event.which === 10 || event.which === 13) {
