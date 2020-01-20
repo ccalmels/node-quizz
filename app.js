@@ -36,7 +36,10 @@ app.ws('/', function(ws, req) {
     const second = get_random_number();
 
     ws.myresponse = first + second;
-    ws.send(first + ' + ' + second + ' = ');
+    ws.send(JSON.stringify({
+	type: 'question',
+	data: first + ' + ' + second + ' = '
+    }));
 });
 
 app.listen(3000, function() {
