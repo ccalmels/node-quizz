@@ -5,6 +5,10 @@ const body_parser = require("body-parser")
 const app = express();
 const wss = websocket(app);
 
+function get_random_number() {
+    return Math.floor(Math.random() * 40 + 10);
+}
+
 app.set('view engine', 'pug');
 app.use(body_parser.urlencoded({ extended: false }));
 app.use(body_parser.json());
@@ -24,7 +28,9 @@ app.ws('/', function(ws, req) {
 	console.log('got msg: ' + msg);
     });
 
-    ws.send('2 + 3 = ');
+    const first = get_random_number();
+    const second = get_random_number();
+    ws.send(first + ' + ' + second + ' = ');
 });
 
 app.listen(3000, function() {
