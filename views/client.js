@@ -16,6 +16,7 @@ ws.onmessage = function(message) {
     switch(obj.type) {
     case 'question':
 	operation.innerHTML = obj.data;
+        input.value = '';
 	input.focus();
 	break;
     case 'progress':
@@ -26,8 +27,10 @@ ws.onmessage = function(message) {
 
 input.onkeypress = function(event) {
     if (event.which === 10 || event.which === 13) {
-        // send message to server
-        ws.send(input.value);
-        input.value = '';
+        // send message to server if not empty
+	if (input.value) {
+            ws.send(input.value);
+            input.value = '';
+	}
     }
 };
