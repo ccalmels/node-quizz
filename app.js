@@ -9,6 +9,69 @@ function get_random_number() {
     return Math.floor(Math.random() * 40 + 10);
 }
 
+function Question() {
+    this.first = get_random_number();
+    this.second = get_random_number();
+    this.response = this.first + this.second;
+    this.answer = '';
+};
+
+Question.prototype.toString = function() {
+    return this.first + ' + ' + this.second + ' = ';
+};
+
+Question.prototype.isOk = function() {
+    return this.response == this.answer;
+};
+
+function Quizz(ws) {
+    this.ws = ws;
+    this.questions = [];
+    this.progress = 0;
+    this.interval = undefined;
+};
+
+Quizz.prototype.increaseProgress = function() {
+    this.progress += 1;
+    if (this.progress > 100)
+	return this.answer('');
+
+    this.ws.send(JSON.stringify({
+	type: 'progress',
+	data: this.progress + '%'
+    }));
+};
+
+Quizz.prototype.add = function(question) {
+    this.progress = 0;
+    this.questions.push(question);
+
+    this.ws.send(JSON.stringify({
+	type: 'question',
+	data: question.toString()
+    }));
+
+    this.interval = setInterval(() => this.increaseProgress(), 50);
+};
+
+Quizz.prototype.answer = function(answer) {
+    clearInterval(this.interval);
+
+    const q = this.questions[this.questions.length - 1];
+    q.answer = answer;
+
+    if (this.questions.length < 10)
+	this.add(new Question());
+    else {
+	this.questions.forEach(function(q) {
+	    if (q.isOk())
+		console.log(q.toString() + q.answer + ' right');
+	    else
+		console.log(q.toString() + q.response + ' fails, you said: ' + q.answer);
+	});
+    }
+};
+
 app.set('view engine', 'pug');
 app.use(body_parser.urlencoded({ extended: false }));
 app.use(body_parser.json());
@@ -25,32 +88,11 @@ app.ws('/', function(ws, req) {
     });
 
     ws.on('message', function(msg) {
-	console.log('got msg: ' + msg + ' want: ' + ws.myresponse);
-	if (ws.myresponse == msg)
-	    console.log('ok');
-	else
-	    console.log('nok');
+	ws.quizz.answer(msg);
     });
 
-    const first = get_random_number();
-    const second = get_random_number();
-
-    ws.myresponse = first + second;
-    ws.send(JSON.stringify({
-	type: 'question',
-	data: first + ' + ' + second + ' = '
-    }));
-
-    ws.myprogress = 0;
-    setInterval(function() {
-	ws.myprogress += 1;
-	if (ws.myprogress > 100)
-	    ws.myprogress = 0;
-
-	ws.send(JSON.stringify({
-	    type: 'progress',
-	    data: ws.myprogress + '%'
-	}))}, 50);
+    ws.quizz = new Quizz(ws);
+    ws.quizz.add(new Question());
 });
 
 app.listen(3000, function() {
