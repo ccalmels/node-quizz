@@ -22,6 +22,8 @@ ws.onmessage = function(message) {
     case 'progress':
 	progress.style.width = obj.data;
 	break;
+    case 'end':
+	window.location.href = '/result';
     }
 };
 

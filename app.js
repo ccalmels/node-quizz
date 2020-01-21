@@ -67,12 +67,10 @@ Quizz.prototype.answer = function(answer) {
     if (this.questions.length < 10)
 	this.add(new Question());
     else {
-	this.questions.forEach(function(q) {
-	    if (q.isOk())
-		console.log(q.toString() + q.answer + ' right');
-	    else
-		console.log(q.toString() + q.response + ' fails, you said: ' + q.answer);
-	});
+	if (this.ws)
+	    this.ws.send(JSON.stringify({
+		type: 'end'
+	    }));
     }
 };
 
@@ -126,6 +124,28 @@ app.ws('/quizz', function(ws, req) {
 
     if (quizz.questions.length == 0)
 	quizz.add(new Question());
+});
+
+app.get('/result', function(req, res) {
+    const quizz = quizzes.get(req.sessionID);
+    if (!quizz)
+	res.redirect('/');
+    else {
+	let answers = [];
+
+	quizz.questions.forEach(function(q) {
+	    let str = {};
+
+	    str.question = q.toString();
+	    str.status = q.isOk() ? 'correct' : 'fail';
+	    str.answer = q.answer;
+	    str.response = q.isOk() ? '' : ' expecting ' + q.response;
+
+	    answers.push(str);
+	});
+
+	res.render('result', { 'questions': answers } );
+}
 });
 
 app.listen(3000, function() {

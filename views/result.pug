@@ -1,0 +1,16 @@
+doctype html5
+html
+	head
+		title Result page
+		style.
+			.correct {
+			color: green;
+			}
+			.fail {
+			color: red;
+			}
+	body
+		h1 Result page
+		ul
+		each q in questions
+			li(class='' + q.status)= q.question + ' ' + q.answer + q.response
