@@ -1,4 +1,6 @@
 const express = require('express');
+const session = require('express-session');
+const uuid = require('uuid/v4');
 const websocket = require('express-ws');
 const body_parser = require("body-parser")
 
@@ -24,11 +26,11 @@ Question.prototype.isOk = function() {
     return this.response == this.answer;
 };
 
-function Quizz(ws) {
-    this.ws = ws;
+function Quizz() {
     this.questions = [];
     this.progress = 0;
     this.interval = undefined;
+    this.ws = undefined;
 };
 
 Quizz.prototype.increaseProgress = function() {
@@ -36,20 +38,22 @@ Quizz.prototype.increaseProgress = function() {
     if (this.progress > 100)
 	return this.answer('');
 
-    this.ws.send(JSON.stringify({
-	type: 'progress',
-	data: this.progress + '%'
-    }));
+    if (this.ws)
+	this.ws.send(JSON.stringify({
+	    type: 'progress',
+	    data: this.progress + '%'
+	}));
 };
 
 Quizz.prototype.add = function(question) {
     this.progress = 0;
     this.questions.push(question);
 
-    this.ws.send(JSON.stringify({
-	type: 'question',
-	data: question.toString()
-    }));
+    if (this.ws)
+	this.ws.send(JSON.stringify({
+	    type: 'question',
+	    data: question.toString()
+	}));
 
     this.interval = setInterval(() => this.increaseProgress(), 50);
 };
@@ -72,31 +76,56 @@ Quizz.prototype.answer = function(answer) {
     }
 };
 
+const quizzes = new Map();
+
 app.set('view engine', 'pug');
 app.use(body_parser.urlencoded({ extended: false }));
 app.use(body_parser.json());
 
+app.use(session({
+    genid: function(req) {
+	console.log('genid');
+        return uuid();
+    },
+    secret: 'some secrets',
+    resave: false,
+    saveUninitialized: true
+}));
+
 app.get('/', function(req, res) {
+    quizzes.set(req.sessionID, new Quizz());
+
     res.render('index');
 });
 
 app.get('/quizz', function(req, res) {
-    res.render('quizz');
+    console.log('id: ' + req.sessionID);
+
+    if (!quizzes.get(req.sessionID))
+	res.redirect('/');
+    else
+	res.render('quizz');
 });
 
 app.ws('/quizz', function(ws, req) {
-    console.log('new websocket client');
+    console.log('new websocket client id: ' + req.sessionID);
+    const quizz = quizzes.get(req.sessionID);
+
+    if (quizz.ws)
+	return ws.close();
+    quizz.ws = ws;
 
     ws.on('close', function(client) {
 	console.log('websocket client exits');
+	quizz.ws = undefined;
     });
 
     ws.on('message', function(msg) {
-	ws.quizz.answer(msg);
+	quizz.answer(msg);
     });
 
-    ws.quizz = new Quizz(ws);
-    ws.quizz.add(new Question());
+    if (quizz.questions.length == 0)
+	quizz.add(new Question());
 });
 
 app.listen(3000, function() {
