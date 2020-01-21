@@ -76,11 +76,11 @@ app.set('view engine', 'pug');
 app.use(body_parser.urlencoded({ extended: false }));
 app.use(body_parser.json());
 
-app.get('/', function(req, res) {
-    res.render('index');
+app.get('/quizz', function(req, res) {
+    res.render('quizz');
 });
 
-app.ws('/', function(ws, req) {
+app.ws('/quizz', function(ws, req) {
     console.log('new websocket client');
 
     ws.on('close', function(client) {
